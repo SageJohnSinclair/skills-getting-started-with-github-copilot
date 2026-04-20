@@ -10,8 +10,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await fetch("/activities");
       const activities = await response.json();
 
-      // Clear loading message
+      // Clear loading message and reset dropdown
       activitiesList.innerHTML = "";
+      activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
 
       // Clear and reset select dropdown
       activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
@@ -33,6 +34,35 @@ document.addEventListener("DOMContentLoaded", () => {
             ${details.participants.length > 0 ? details.participants.map(p => `<div class="participant-item"><span>${p}</span><button class="delete-btn" data-activity="${name}" data-email="${p}">❌</button></div>`).join('') : '<p>No participants yet</p>'}
           </div>
         `;
+
+        // Add event listeners for delete buttons
+        const deleteButtons = activityCard.querySelectorAll('.delete-btn');
+        deleteButtons.forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const participant = btn.dataset.participant;
+            const activity = btn.dataset.activity;
+
+            try {
+              const response = await fetch(
+                `/activities/${encodeURIComponent(activity)}/signup?email=${encodeURIComponent(participant)}`,
+                {
+                  method: "DELETE",
+                }
+              );
+
+              if (response.ok) {
+                // Refresh the activities list
+                fetchActivities();
+              } else {
+                const result = await response.json();
+                alert(`Failed to unregister: ${result.detail || 'Unknown error'}`);
+              }
+            } catch (error) {
+              alert('Failed to unregister. Please try again.');
+              console.error('Error unregistering:', error);
+            }
+          });
+        });
 
         activitiesList.appendChild(activityCard);
 
